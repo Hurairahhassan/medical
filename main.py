@@ -9,6 +9,10 @@ class Symptoms(BaseModel):
 
 app = FastAPI()
 
+@app.get("/")
+async def rootMsg():
+    return "API IS RUNNING PERFECTLY"
+    
 # Load the logistic regression model
 with open('logistic_regression_model.pkl', 'rb') as model_file:
     lr_loaded = pickle.load(model_file)
