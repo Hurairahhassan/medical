@@ -3,5 +3,5 @@ uvicorn
 scikit-learn
 pandas
 numpy
-pickle
+pickle5
 pydantic
