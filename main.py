@@ -1,8 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pandas as pd
-import pickle
-
+from joblib import load
 # Define a request model
 class Symptoms(BaseModel):
     symptoms: str  # User will input symptoms as a single string separated by commas
@@ -12,10 +11,10 @@ app = FastAPI()
 @app.get("/")
 async def rootMsg():
     return "API IS RUNNING PERFECTLY"
-    
+
+
 # Load the logistic regression model
-with open('logistic_regression_model.pkl', 'rb') as model_file:
-    lr_loaded = pickle.load(model_file)
+lr_loaded = load('logistic_regression_model.pkl')
 
 # Load the dataset
 df_norm = pd.read_csv("dis_sym_dataset_norm.csv")
