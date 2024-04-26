@@ -2,11 +2,29 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pandas as pd
 from joblib import load
-# Define a request model
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, validator
+
+# Define a request model with validation
 class Symptoms(BaseModel):
     symptoms: str  # User will input symptoms as a single string separated by commas
 
+    # Adding a validator to ensure the input is not empty
+    @validator('symptoms')
+    def check_symptoms(cls, value):
+        if not value:
+            raise ValueError('Symptoms input must not be empty')
+        return value
+
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins = ["*"],
+    allow_credentials=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 @app.get("/")
 async def rootMsg():
@@ -22,7 +40,7 @@ X = df_norm.iloc[:, 1:]
 Y = df_norm.iloc[:, 0:1]
 dataset_symptoms = list(X.columns)  # List of symptoms from the dataset
 
-@app.post("/predict/")
+@app.post("/symptoms")
 async def predict_disease(symptoms: Symptoms):
     user_input = symptoms.symptoms.lower().strip()
     user_symptoms = [sym.strip().replace('-', ' ').replace("'", '') for sym in user_input.split(',')]
