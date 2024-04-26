@@ -4,6 +4,7 @@ import pandas as pd
 from joblib import load
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, validator
+from allergic import best_model, tfidf_vectorizer, label_encoder
 
 # Define a request model with validation
 class Symptoms(BaseModel):
@@ -62,6 +63,24 @@ async def predict_disease(symptoms: Symptoms):
         "disease": highest_disease,
         "probability": f"{highest_probability:.2f}%"
     }
+
+
+# -------------------------- Alergic -------------------------
+# Function to predict allergy
+def predict_allergy(symptom_input: str):
+    symptom_tfidf = tfidf_vectorizer.transform([symptom_input])
+    disease_pred = best_model.predict(symptom_tfidf)
+    predicted_disease = label_encoder.inverse_transform(disease_pred)[0]
+    return predicted_disease
+
+# Route to predict allergy
+@app.post("/allergic")
+async def predict_allergy_route(symptoms: Symptoms):
+    symptoms = [symptom.strip() for symptom in symptoms.symptoms.split(',')]
+    all_predicted_diseases = [predict_allergy(symptom) for symptom in symptoms]
+    # Find the most common predicted disease
+    predicted_allergy = max(set(all_predicted_diseases), key=all_predicted_diseases.count)
+    return {"predicted_allergy": predicted_allergy}
 
 if __name__ == "__main__":
     import uvicorn
