@@ -5,6 +5,7 @@ from joblib import load
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, validator
 from allergic import best_model, tfidf_vectorizer, label_encoder
+from neurology import load_model, get_feature_names
 
 # Define a request model with validation
 class Symptoms(BaseModel):
@@ -81,6 +82,38 @@ async def predict_allergy_route(symptoms: Symptoms):
     # Find the most common predicted disease
     predicted_allergy = max(set(all_predicted_diseases), key=all_predicted_diseases.count)
     return {"predicted_allergy": predicted_allergy}
+
+
+# ------------- Neurology Model ----------------
+# Load model and feature names
+model_N = load_model()
+feature_names = get_feature_names()
+
+
+@app.post("/neurology")
+async def predict_disorder(input: Symptoms):
+    prediction = make_prediction(input.symptoms)
+    return {"Predicted Disorder": prediction}
+
+def make_prediction(input_symptoms):
+    # Create a dictionary with all zeros for each symptom
+    input_data = {column: 0 for column in feature_names}
+    
+    # Process the input symptoms
+    symptoms = input_symptoms.split(',')
+    cleaned_symptoms = [symptom.strip().replace(' ', '.').lower() for symptom in symptoms]
+    
+    # Update the dictionary based on the input
+    for symptom in cleaned_symptoms:
+        if symptom in input_data:
+            input_data[symptom] = 1
+    
+    # Convert the dictionary to DataFrame
+    input_df = pd.DataFrame([input_data])
+    
+    # Predict the disorder using the trained model
+    prediction = model_N.predict(input_df)
+    return prediction[0]
 
 if __name__ == "__main__":
     import uvicorn
